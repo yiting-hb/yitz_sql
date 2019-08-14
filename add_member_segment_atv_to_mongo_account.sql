@@ -48,6 +48,5 @@ from mongo_account a
 left join l12m_txn_amount_per_account l12m_txn
     on a.id = l12m_txn.id
 )
-
-select member_segment_atv, count(*), count(distinct id) from temp group by 1 order by 3 desc
+select member_segment_atv, count(*) account_count, count(distinct id) distinct_account_count from temp group by 1 order by 3 desc
 ;

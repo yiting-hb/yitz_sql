@@ -23,6 +23,9 @@ group by 1
 temp as (
 select
 a.id
+, a.first_plan_start_date
+, a.first_paid
+, a.subscription_canceled
 , a.days_since_first_paid
 , a.total_paid
 , l12m_txn_amount_usd
@@ -33,7 +36,7 @@ a.id
         END as atv_segment_calculation_period
 --, CASE WHEN days_since_first_paid > 0 THEN CAST ((total_paid * 365.0)/atv_segment_calculation_period AS double precision) END as atv -- old logic that looks at total txn amount / total days since first paid
 , 150 as segments_maturation_period
-, CASE WHEN days_since_first_paid > 0 then round((l12m_txn_amount_usd / least(atv_segment_calculation_period, 365)) * 365) END as atv -- new logic that looks at latest 12 month txn amount for accounts older than 1 yr
+, CASE WHEN days_since_first_paid > 0 then round((coalesce(l12m_txn_amount_usd,0) / least(atv_segment_calculation_period, 365)) * 365) END as atv -- new logic that looks at latest 12 month txn amount for accounts older than 1 yr
 , CASE
     WHEN days_since_first_paid IS NULL THEN 'Not Paid Post Plan'
     WHEN days_since_first_paid < segments_maturation_period then 'Insufficient Data'
@@ -48,5 +51,6 @@ from mongo_account a
 left join l12m_txn_amount_per_account l12m_txn
     on a.id = l12m_txn.id
 )
+
 select member_segment_atv, count(*) account_count, count(distinct id) distinct_account_count from temp group by 1 order by 3 desc
 ;
